@@ -1,0 +1,219 @@
+imports:
+    - { resource: parameters.yml }
+    - { resource: security.yml }
+    - { resource: services.yml }
+    - { resource: "@ApiBundle/Resources/config/services.yml" }
+    - { resource: "@OauthBundle/Resources/config/services.yml" }
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# http://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+    locale: en
+
+framework:
+    #esi:             ~
+    #translator:      { fallbacks: ["%locale%"] }
+    secret:          "%secret%"
+    router:
+        resource: "%kernel.root_dir%/config/routing.yml"
+        strict_requirements: ~
+    form:            ~
+    csrf_protection: ~
+    validation:      { enable_annotations: true }
+    #serializer:      { enable_annotations: true }
+    templating:
+        engines: ['twig']
+    default_locale:  "%locale%"
+    trusted_hosts:   ~
+    trusted_proxies: ~
+    session:
+        # handler_id set to null will use default session handler from php.ini
+        handler_id:  ~
+    fragments:       ~
+    http_method_override: true
+
+# Twig Configuration
+twig:
+    debug:            "%kernel.debug%"
+    strict_variables: "%kernel.debug%"
+
+# Doctrine Configuration
+doctrine:
+    dbal:
+        driver:   pdo_mysql
+        host:     "%database_host%"
+        port:     "%database_port%"
+        dbname:   "%database_name%"
+        user:     "%database_user%"
+        password: "%database_password%"
+        charset:  UTF8
+        # if using pdo_sqlite as your database driver:
+        #   1. add the path in parameters.yml
+        #     e.g. database_path: "%kernel.root_dir%/data/data.db3"
+        #   2. Uncomment database_path in parameters.yml.dist
+        #   3. Uncomment next line:
+        #     path:     "%database_path%"
+
+    orm:
+        auto_generate_proxy_classes: "%kernel.debug%"
+        naming_strategy: doctrine.orm.naming_strategy.underscore
+        auto_mapping: true
+
+# Swiftmailer Configuration
+swiftmailer:
+    transport: "%mailer_transport%"
+    host:      "%mailer_host%"
+    username:  "%mailer_user%"
+    password:  "%mailer_password%"
+    spool:     { type: memory }
+
+# FOS Rest Bundle
+fos_rest:
+    view:
+#        default_engine: php
+        view_response_listener: force
+        force_redirects:
+          html: true
+#          xml: true
+        formats:
+            jsonp: true
+            json: true
+            xml: true
+            rss: false
+        templating_formats:
+            html: true
+        mime_types:
+            json: ['application/json', 'application/x-json']
+            rss:  ['application/rss+xml']
+            jpg:  ['image/jpeg']
+            png:  ['image/png']
+        jsonp_handler: ~
+    body_listener: true
+    param_fetcher_listener: true
+    allowed_methods_listener: true
+    access_denied_listener:
+        json: true
+    format_listener:
+        rules:
+            - { path: ^/, priorities: [ json ], fallback_format: json, prefer_extension: true }
+    routing_loader:
+        default_format: ~
+    exception:
+        codes:
+            'Symfony\Component\Routing\Exception\ResourceNotFoundException': 404
+            'Doctrine\ORM\OptimisticLockException': HTTP_CONFLICT
+        messages:
+            'Symfony\Component\Routing\Exception\ResourceNotFoundException': true
+    serializer:
+#        version: 1.0
+#        groups: [data]
+
+# Fos User Bundle
+fos_user:
+    db_driver: orm
+    firewall_name: main
+    user_class: ApiBundle\Entity\User
+    registration:
+        confirmation:
+            enabled:    false
+        form:
+            type: symfonyzero_user_registration
+
+# Fos oAuth Bundle
+fos_oauth_server:
+    db_driver: orm
+    client_class:        OauthBundle\Entity\Client
+    access_token_class:  OauthBundle\Entity\AccessToken
+    refresh_token_class: OauthBundle\Entity\RefreshToken
+    auth_code_class:     OauthBundle\Entity\AuthCode
+    service:
+        user_provider: fos_user.user_provider.username_email
+
+# Nelmio Api Doc Bundle
+nelmio_api_doc:
+    name:                 SymfonyZero API Documentacion Webservice
+    exclude_sections:     []
+    default_sections_opened:  true
+    motd:
+        template:             NelmioApiDocBundle::Components/motd.html.twig
+
+    request_listener:
+        enabled:              true
+        parameter:            _doc
+
+    sandbox:
+        enabled:              true
+        endpoint:             ~
+        accept_type:          ~
+        body_format:
+            formats:
+                - form
+                - json
+
+            default_format:       form
+
+        request_format:
+            formats:
+                json:                application/json
+                xml:                 application/xml
+
+            method:               format_param
+            default_format:       json
+
+    swagger:
+        model_naming_strategy:  dot_notation
+        api_base_path:        /api
+        swagger_version:      1.2
+        api_version:          0.1
+        info:
+            title:                SymfonyZero API Documentacion Webservice
+            description:          SymfonyZero API Documentacion Webservice
+            TermsOfServiceUrl:    ~
+            contact:              ~
+            license:              ~
+            licenseUrl:           ~
+    cache:
+        enabled:              false
+        file:                 %kernel.cache_dir%/api-doc.cache
+
+# Nelmio CORS Bundle
+nelmio_cors:
+        defaults:
+            allow_credentials: false
+            allow_origin: []
+            allow_headers: []
+            allow_methods: []
+            expose_headers: []
+            max_age: 0
+            hosts: []
+            origin_regex: false
+        paths:
+            '^/api/':
+                allow_origin: ['*']
+                allow_headers: ['X-Custom-Auth']
+                allow_methods: ['POST', 'PUT', 'GET', 'DELETE']
+                max_age: 3600
+            '^/':
+                origin_regex: true
+                allow_origin: ['^http://localhost:[0-9]+']
+                allow_headers: ['X-Custom-Auth', 'X-Switch-User']
+                allow_methods: ['POST', 'PUT', 'GET', 'DELETE']
+                max_age: 3600
+                hosts: ['^api\.']
+
+# KNP Paginator Bundle
+knp_paginator:
+    page_range: 5                      # default page range used in pagination control
+    default_options:
+        page_name: page                # page query parameter name
+        sort_field_name: sort          # sort field query parameter name
+        sort_direction_name: direction # sort direction query parameter name
+        distinct: true                 # ensure distinct results, useful when ORM queries are using GROUP BY statements
+    template:
+        pagination: KnpPaginatorBundle:Pagination:sliding.html.twig     # sliding pagination controls template
+        sortable: KnpPaginatorBundle:Pagination:sortable_link.html.twig # sort link template
+
+#Switch-User-Stateless Bundle
+switch_user_stateless:
+    parameter: 'X-Switch-User'
+    role: 'ROLE_ALLOWED_TO_SWITCH'
